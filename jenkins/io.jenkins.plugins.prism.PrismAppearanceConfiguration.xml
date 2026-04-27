@@ -1,0 +1,5 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<io.jenkins.plugins.prism.PrismAppearanceConfiguration plugin="prism-api@1.30.0-723.v97277866cece">
+  <theme>PRISM</theme>
+  <jenkins plugin="plugin-util-api@7.1330.v47b_46ee2047a_"/>
+</io.jenkins.plugins.prism.PrismAppearanceConfiguration>

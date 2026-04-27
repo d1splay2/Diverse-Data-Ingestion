@@ -1,0 +1,15 @@
+services:
+  jenkins:
+    image: docker.io/jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - ./jenkins:/var/jenkins_home
+    healthcheck:
+      test: ["CMD", "curl -f http://127.0.0.1:8080/login"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
