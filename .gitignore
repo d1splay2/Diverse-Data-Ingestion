@@ -1,3 +1,4 @@
 env
 windmill.yaml
 __pycache__
+*.csv
