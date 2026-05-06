@@ -16,19 +16,5 @@ services:
       retries: 5
       start_period: 10s
 
-  init:
-    build: ./docker
-    image: services_init:latest
-    container_name: init
-    depends_on:
-      rustfs:
-        condition: service_healthy
-    env_file:
-      - .env
-    volumes:
-      - ./src:/opt/src
-      - ./data/source/:/opt/data
-    command: sh -c 'python /opt/src/transform_data.py'
-
 volumes:
   rustfs:

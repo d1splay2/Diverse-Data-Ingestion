@@ -1,6 +1,6 @@
 FROM python:3.12.13-trixie
 
-RUN pip install polars deltalake
+RUN pip install boto3 requests polars deltalake
 
 WORKDIR /opt
 

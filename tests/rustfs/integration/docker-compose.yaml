@@ -1,3 +1,10 @@
+x-volumes: &rustfs-integration
+  - ./src:/opt/tests # Testing module
+  - ../../../data/source/:/opt/test-data # Test data
+  - ../../../docker/rustfs/__init__.py:/opt/src/__init__.py # Init script to be able to import, can be any init
+  - ../../../docker/rustfs/main.py:/opt/src/main.py # RustFS creation related scripts
+  - ../../../src/transform_data.py:/opt/src/transform_data.py # Tranforming and pushing to RustFS scripts
+
 services:
   rustfs:
     image: rustfs/rustfs:latest
@@ -24,9 +31,7 @@ services:
     container_name: rustfs-integration
     env_file:
       - .env
-    volumes:
-      - ./src:/opt/tests
-      - ../../../docker/rustfs/:/opt/src
+    volumes: *rustfs-integration
     depends_on:
       rustfs:
         condition: service_healthy

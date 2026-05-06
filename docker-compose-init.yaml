@@ -1,0 +1,46 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    env_file:
+      - .env
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      RUSTFS_REGION: us-east-1
+    volumes:
+      - rustfs:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f  http://127.0.0.1:9000/health" ]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - init
+
+  init:
+    build: ./docker
+    image: services_init:latest
+    container_name: init
+    env_file:
+      - .env
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    volumes:
+      - ./docker/rustfs/main.py:/opt/src/main.py
+      - ./src/transform_data.py:/opt/src/transform_data.py
+      - ./docker/Makefile:/opt/src/Makefile
+      - ./data/source:/opt/data
+    command: sh -c 'make -f /opt/src/Makefile init'
+    networks:
+      - init
+
+volumes:
+  rustfs:
+
+networks:
+  init:
+
