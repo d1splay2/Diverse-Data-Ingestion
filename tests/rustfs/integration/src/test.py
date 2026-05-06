@@ -7,10 +7,15 @@ import os, sys, inspect
 # Overall test metrics
 current_test_pos = 0
 amount_of_tests = 0
-batch_size = 0
 
 # Tests specific metrics
 bucket = 'landing'
+
+# Init tranformer object
+df = pl.read_csv('/opt/test-data/Reviews.csv')
+batch_size = int(len(df) / 9)
+
+tranfromer = Transformer(df, batch_size, S3Config(bucket))
 
 class Result:
     def __init__(self, output, result_text, expected):
@@ -23,7 +28,7 @@ def test(func):
 
     res = func()
     assert res.output == res.expected, f'✕({current_test_pos}/{amount_of_tests}) {func.__name__} failed.\n' \
-                                           f'Error: {res.result_text}'
+                                       f'Error: {res.result_text}'
     current_test_pos += 1
     print(f'✓ ({current_test_pos}/{amount_of_tests}) {func.__name__} passed.')
 
@@ -60,28 +65,55 @@ def create_bucket(order = 1):
     return Result(res.status_code, res.content, 200)
 
 def write_delta(order = 2):
-    global batch_size
-
-    df = pl.read_csv('/opt/test-data/Reviews.csv')
-    batch_size = int(len(df) / 9)
-
-    tranfromer = Transformer(df, batch_size, S3Config('landing'))
+    global tranfromer
     try:
         return Result(tranfromer.write_delta(), 'All good!', None)
     except Exception as e:
         return Result(e, e, None)
 
 def delta_validation(order = 3):
-    df = pl.read_csv('/opt/test-data/Reviews.csv')
+    global df
 
     expected_df = df[calculate_offset(batch_size, 0)]
 
     s3_config = S3Config('landing')
 
     data_from_s3 = pl.read_delta(
-        s3_config.create_s3_destionation('test'),
+        source=s3_config.create_s3_destionation('data_delta'),
         storage_options=s3_config.credentials
     )
+
+    result = expected_df.equals(data_from_s3)
+
+    return Result(result, "Data written in S3 storage doesn't line up with actual data", True)
+
+def write_csv(order = 4):
+    global tranfromer
+    try:
+        return Result(tranfromer.write_csv(), 'All good!', None)
+    except Exception as e:
+        return Result(e, e, None)
+
+def csv_validation(order = 5):
+    global df
+
+    expected_df = df[calculate_offset(batch_size, 1)]
+
+    s3_config = S3Config('landing')
+
+    credentials = {
+        'aws_region': 'us-east-1',
+        'aws_access_key_id': os.environ.get('RUSTFS_ACCESS_KEY'),
+        'aws_secret_access_key': os.environ.get('RUSTFS_SECRET_KEY'),
+        'allow_http': 'true',
+        'force_path_style': 'true',
+        'aws_endpoint_url': 'http://rustfs:9000',
+    }
+
+    data_from_s3 = pl.scan_csv(
+        source=f'{s3_config.create_s3_destionation('data')}.csv',
+        storage_options=credentials
+    ).collect()
 
     result = expected_df.equals(data_from_s3)
 

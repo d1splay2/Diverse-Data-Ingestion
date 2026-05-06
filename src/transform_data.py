@@ -37,8 +37,14 @@ class Transformer:
     def write_delta(self):
         df_slice = self.helper()
         df_slice.write_delta(
-            target=self.s3_config.create_s3_destionation('test'),
+            target=self.s3_config.create_s3_destionation('data_delta'),
             mode='overwrite',
+            storage_options=self.s3_config.credentials)
+
+    def write_csv(self):
+        df_slice = self.helper()
+        df_slice.write_csv(
+            file=f'{self.s3_config.create_s3_destionation('data')}.csv',
             storage_options=self.s3_config.credentials)
 
     def helper(self):
@@ -55,9 +61,10 @@ def main():
     df = pl.read_csv('/opt/data/Reviews.csv')
     batch_size = int(len(df) / 9)
 
-    tranfromer = Transformer(df, batch_size, S3Config('landing'))
+    transformer = Transformer(df, batch_size, S3Config('landing'))
 
-    tranfromer.write_delta()
+    transformer.write_delta()
+    transformer.write_csv()
 
 if __name__ == '__main__':
     main()
